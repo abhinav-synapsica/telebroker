@@ -5,7 +5,7 @@ const daikon = require('daikon');
 const dicomParser = require('dicom-parser');
 var zlib = require('zlib');
 
-const port = 3000
+const PORT = 2222
 
 var server = net.createServer();
 
@@ -56,18 +56,16 @@ server.on('connection',function(socket){
 	});
 
 
-	socket.on('error',function(error){
-	  console.log('Error : ' + error);
-	});
-
 	const chunks = [];
 	socket.on('data', function(chunk){
+		console.log(chunk, 'chunk');
 		chunks.push(chunk);
 	})
 
+
 	socket.on('end',function(){
 
-
+		console.log('data is recieved :End')
 		const data = Buffer.concat(chunks)
 	  var bread = socket.bytesRead;
 	  var bwrite = socket.bytesWritten;
@@ -76,12 +74,8 @@ server.on('connection',function(socket){
 	  console.log('Data:', data);
 	  var imgData = data   
 	  var bufferSize = 1000000;
-	 //  var arrayBuffer = new ArrayBuffer(bufferSize);
-		// var byteArray = new Uint8Array(arrayBuffer);
-		 fs.writeFile('../dcopy1.dcm', data, function (err) {
-			  if (err) throw err;
-			  console.log('Saved!');
-			});
+
+	 	fs.writeFileSync('./dcopy.dcm', data);
 
 		// try
 		// {
@@ -123,6 +117,16 @@ server.on('connection',function(socket){
 
 	});
 
+	server.on('error', (e) => {
+	  if (e.code === 'EADDRINUSE') {
+	    console.log('Address in use, retrying...');
+	    setTimeout(() => {
+	      server.close();
+	      server.listen(PORT);
+	    }, 1000);
+	  }
+	});
+
 })
 
 
@@ -137,7 +141,7 @@ server.on('listening',function(){
 server.maxConnections = 10;
 
 //static port allocation
-server.listen(2222);
+server.listen(PORT);
 
 
 
@@ -152,3 +156,4 @@ server.listen(2222);
 
 
 
+// TODO: try to change buffer size
